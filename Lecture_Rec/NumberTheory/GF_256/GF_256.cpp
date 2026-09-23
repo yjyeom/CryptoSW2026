@@ -240,7 +240,7 @@ byte AES_Affine(byte w) {
     byte y;
     y = 0;
     //y_vec = { y0,y1,y2, ... ,y7 } --> y = [y7y6y5y4 y3y2y1y0]
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {  // 수정된 부분!!!!! (7-->8)
         y ^= y_vec[i] << i;
         // y0<<0 --> 0000 000y0
         // y1<<1 --> 0000 00y10
@@ -261,7 +261,19 @@ void Get_AES_Sbox(byte S[256]) {
     }
 }
 
-//Sbox 만들기
+// ISbox를 테이블로 받아오기
+void Get_AES_ISbox(byte IS[256]) {
+    byte Sbox[256];
+    Get_AES_Sbox(Sbox);
+
+    // ISbox[ Sbox[x] ] => x
+    for (int i = 0; i < 256; i++) {
+        IS[ Sbox[i] ] =  i;
+    }
+}
+
+
+//Sbox 출력하기(소스코드에 붙이는 용도)
 void print_sbox() {
     byte S[256];
 
@@ -279,12 +291,128 @@ void print_sbox() {
     }
 }
 
+//ISbox 출력하기(소스코드에 붙이는 용도)
+void print_isbox() {
+    byte IS[256];
+
+    Get_AES_ISbox(IS);
+
+    printf("ISbox[256] = {\n");
+    for (int i = 0; i < 256; i++) {
+        if (i < 255) {
+            printf("0x%02x, ", IS[i]);
+        }
+        else {
+            printf("0x%02x };\n", IS[i]);
+        }
+        if ((i % 16) == 15) printf("\n");
+    }
+}
+
+// GF(2^8)의 4x4 행렬 인쇄
+void GF256_Matrix_Print(byte M[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        printf("[");
+        for (int j = 0; j < 4; j++) {
+            printf(" %02x", M[i][j]);
+        }
+        printf(" ]\n");
+    }
+    printf("\n");
+}
+
+//MixColumn 연산 32비트 in[4] --> 32비트 out[4]
+void MixCol(byte in[4], byte out[4]) {
+    byte MC[4][4] = {
+        {0x02, 0x03, 0x01, 0x01},
+        {0x01, 0x02, 0x03, 0x01},
+        {0x01, 0x01, 0x02, 0x03},
+        {0x03, 0x01, 0x01, 0x02} };
+    for (int i = 0; i < 4; i++) {
+        out[i] = 0x00;
+        for (int j = 0; j < 4; j++) {
+            //out[i] ^= MC[i][j] * in[j];
+            out[i] ^= GF256_mul(MC[i][j], in[j]);
+        }
+    }
+}
+
+//InvMixColumn 연산 32비트 in[4] --> 32비트 out[4]
+void InvMixCol(byte in[4], byte out[4]) {
+    byte IMC[4][4] = {
+        {0x0e, 0x0b, 0x0d, 0x09},
+        {0x09, 0x0e, 0x0b, 0x0d},
+        {0x0d, 0x09, 0x0e, 0x0b},
+        {0x0b, 0x0d, 0x09, 0x0e} };
+    for (int i = 0; i < 4; i++) {
+        out[i] = 0x00;
+        for (int j = 0; j < 4; j++) {
+            //out[i] ^= IMC[i][j] * in[j];
+            out[i] ^= GF256_mul(IMC[i][j], in[j]);
+        }
+    }
+}
+
+// GF(2^8) 4x4행렬의 곱  C = A*B
+void GF256_Matrix_Mul(byte A[4][4], byte B[4][4], byte C[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            C[i][j] = 0x00;
+            for (int k = 0; k < 4; k++) {
+                //C[i][j] ^= A[i][k] * B[k][j];
+                C[i][j] ^= GF256_mul(A[i][k], B[k][j]);
+            }
+        }
+    }
+}
+
+void MC4_test() {
+    byte MC[4][4] = {
+        {0x02, 0x03, 0x01, 0x01},
+        {0x01, 0x02, 0x03, 0x01},
+        {0x01, 0x01, 0x02, 0x03},
+        {0x03, 0x01, 0x01, 0x02} };
+
+    byte MC2[4][4], MC3[4][4], MC4[4][4];
+
+    GF256_Matrix_Mul(MC, MC, MC2);
+    GF256_Matrix_Mul(MC2, MC, MC3);
+    GF256_Matrix_Mul(MC3, MC, MC4);
+
+    printf("MC =\n");
+    GF256_Matrix_Print(MC);
+    printf("MC^2 =\n");
+    GF256_Matrix_Print(MC2);
+    printf("MC^3 =\n");
+    GF256_Matrix_Print(MC3);
+    printf("MC^4 =\n");
+    GF256_Matrix_Print(MC4);
+}
+
+void MixCol_InvMixCol_test() {
+    byte in[4] = { 0x01, 0x02, 0x03, 0x04 };
+    byte out[4], new_in[4];
+
+    MixCol(in, out);
+    InvMixCol(out, new_in);
+
+    printf("in[4] = {%02x, %02x, %02x, %02x}\n", 
+        in[0], in[1], in[2], in[3]);
+    printf("out[4] = {%02x, %02x, %02x, %02x}\n",
+        out[0], out[1], out[2], out[3]);
+    printf("new_in[4] = {%02x, %02x, %02x, %02x}\n",
+        new_in[0], new_in[1], new_in[2], new_in[3]);
+}
+
 int main() {
     //GF256_element();
     //GF256_mul_test();
     //order_inverse_test();
-    print_sbox();
+    //print_sbox();
+    //print_isbox();
 
+    MC4_test();
+    MixCol_InvMixCol_test();
 
     return 0;
 }
