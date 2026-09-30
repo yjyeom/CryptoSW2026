@@ -151,36 +151,46 @@ void exgcd_test()
 
 }
 //============================
-
+// HW1-Problem 1
 void Z127_inverse() {
     int a = 127;
     int b = 26;
-    int c = gcd(a, b);
-    printf("a=%d, b=%d, gcd(%d,%d) = %d\n", a, b, a, b, c);
+
+    printf("==[HW1-Problem 1]==\n");
+    printf("Find 26^(-1) mod 127\n");
+    printf("Extended Euclidean Algorithm...\n");
+
     int x, y;
     int ex_c = ex_gcd_cpp(a, b, x, y);
-    printf("Extended Euclidean Algorithm\n");
-    printf("a=%d, b=%d, gcd(%d,%d) = %d\n", a, b, a, b, ex_c);
-    printf("gcd(%d,%d) = (%d)*%d + (%d)*%d = %d\n", a, b, x, a, y, b, ex_c);
+    
+    //printf("a=%d, b=%d, gcd(%d,%d) = %d\n", a, b, a, b, ex_c);
+    printf("\ngcd(%d,%d) = (%d)*%d + (%d)*%d = %d\n", a, b, x, a, y, b, ex_c);
+	printf("Inverse of %d in Z_%d is %d\n\n", b, a, (y + a) % a);
 }
 
+//============================
+// HW1-Problem 2
 void Z128_inverse() {
     int a = 128;
     int b = 27;
-    int c = gcd(a, b);
-    printf("a=%d, b=%d, gcd(%d,%d) = %d\n", a, b, a, b, c);
+
+    printf("==[HW1-Problem 2]==\n");
+    printf("Find 27^(-1) mod 128\n");
+
+    printf("Extended Euclidean Algorithm...\n");
     int x, y;
     int ex_c = ex_gcd_cpp(a, b, x, y);
-    printf("Extended Euclidean Algorithm\n");
-    printf("a=%d, b=%d, gcd(%d,%d) = %d\n", a, b, a, b, ex_c);
-    printf("gcd(%d,%d) = (%d)*%d + (%d)*%d = %d\n", a, b, x, a, y, b, ex_c);
+        
+    //printf("a=%d, b=%d, gcd(%d,%d) = %d\n", a, b, a, b, ex_c);
+    printf("\ngcd(%d,%d) = (%d)*%d + (%d)*%d = %d\n", a, b, x, a, y, b, ex_c);
+    printf("Inverse of %d in Z_%d is %d\n\n", b, a, (y + a) % a);
 }
 
 int main() {
-    //gcd_test();
-    //exgcd_test();
-
+    
+    //Prob 1
     Z127_inverse();
+    //Prob 2
     Z128_inverse();
 
     return 0;

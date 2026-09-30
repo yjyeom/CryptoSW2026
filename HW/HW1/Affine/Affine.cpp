@@ -69,7 +69,7 @@ GF2_Matrix GF2_Matrix_Mul(GF2_Matrix A, GF2_Matrix B) {
         for (int j = 0; j < AB.col; j++) {
             AB.M[i][j] = 0;
             for (int k = 0; k < A.col; k++) {
-                AB.M[i][j] += A.M[i][k] * B.M[k][j];
+                AB.M[i][j] ^= A.M[i][k] * B.M[k][j];
             }
         }
     }
@@ -173,8 +173,13 @@ GF2_Matrix GF2_Matrix_scalar(GF2_Matrix A, byte k) {
             kA.M[i][j] = k * A.M[i][j];
     return kA;
 }
+//===============================================================================
 
-void test_GF2_matrix() {
+
+//=============================
+// HW1-Problem 4
+void GF2_inverse_matrix() {
+    //AES Sobx에 사용한 Matrix A
     const byte A[8][8] = {
     {1, 0, 0, 0, 1, 1, 1, 1},
     {1, 1, 0, 0, 0, 1, 1, 1},
@@ -209,10 +214,16 @@ void test_GF2_matrix() {
         for (int j = 0; j < GF2_IA.col; j++)
             GF2_IA.M[i][j] = IA[i][j];
 
+
+    GF2_Matrix GF2_AIA;
+    GF2_AIA = GF2_Matrix_Mul(GF2_A, GF2_IA);
+
     printf("A =\n");
     GF2_Matrix_print(GF2_A);
     printf("invA =\n");
     GF2_Matrix_print(GF2_IA);
+    printf("Check: A*invA =\n");
+    GF2_Matrix_print(GF2_AIA);
 
     printf("=== Inverse of A\n");
     GF2_Matrix InvA;
@@ -221,178 +232,15 @@ void test_GF2_matrix() {
     GF2_Matrix_print(InvA);
 }
 
-// 2026 HW
-void test_GF2_matrix_HW() {
-    const byte A[8][8] = {  // AES Affine 변환 행렬의 첫행을 마지막행으로 보낸 행렬
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {1, 1, 1, 0, 0, 0, 1, 1},
-        {1, 1, 1, 1, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {0, 1, 1, 1, 1, 1, 0, 0},
-        {0, 0, 1, 1, 1, 1, 1, 0},
-        {0, 0, 0, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 1, 1, 1, 1}
-    };
-
-    const byte IA[8][8] = {  // A^(-1)을 미리 준비한다. 
-    {0, 1, 0, 0, 1, 0, 1, 0},
-    {0, 0, 1, 0, 0, 1, 0, 1},
-    {1, 0, 0, 1, 0, 0, 1, 0},
-    {0, 1, 0, 0, 1, 0, 0, 1},
-    {1, 0, 1, 0, 0, 1, 0, 0},
-    {0, 1, 0, 1, 0, 0, 1, 0},
-    {0, 0, 1, 0, 1, 0, 0, 1},
-    {1, 0, 0, 1, 0, 1, 0, 0}
-    };
-
-    GF2_Matrix GF2_A;
-    GF2_A.row = 8; GF2_A.col = 8;
-    for (int i = 0; i < GF2_A.row; i++)
-        for (int j = 0; j < GF2_A.col; j++)
-            GF2_A.M[i][j] = A[i][j];
-
-    GF2_Matrix GF2_IA;
-    GF2_IA.row = 8; GF2_IA.col = 8;
-    for (int i = 0; i < GF2_IA.row; i++)
-        for (int j = 0; j < GF2_IA.col; j++)
-            GF2_IA.M[i][j] = IA[i][j];
-
-    printf("A =\n");
-    GF2_Matrix_print(GF2_A);
-    printf("invA =\n");
-    GF2_Matrix_print(GF2_IA);
-
-    printf("=== Inverse of A\n");
-    GF2_Matrix InvA;
-    InvA = GF2_Matrix_Inverse(GF2_A);
-    printf("invA =\n");
-    GF2_Matrix_print(InvA);
-}
-
-//===========================================
-
-//Affine변환: w --> Aw+b
-// w는 GF(2)^8 원소 (8차원 벡터)  w = [w7w6w5w4 w3w2w1w0]
-byte AES_Affine_HW(byte w) {
-	const byte A[8][8] = {  // AES Affine 변환 행렬의 첫행을 마지막행으로 보낸 행렬
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {1, 1, 1, 0, 0, 0, 1, 1},
-        {1, 1, 1, 1, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {0, 1, 1, 1, 1, 1, 0, 0},
-        {0, 0, 1, 1, 1, 1, 1, 0},
-        {0, 0, 0, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 1, 1, 1, 1}
-    };
-    const byte b_vec[8] = { 1, 1, 0, 0, 0, 1, 1, 0 };
-    byte w_vec[8];  // w_vec = {w0,w1,w2, ... ,w7}
-    byte y_vec[8];  // y_vec = {y0,y1,y2, ... ,y7}
-
-    //w = [w7w6w5w4 w3w2w1w0] --> w_vec ={w0,w1,w2, ... ,w7}
-    for (int i = 0; i < 8; i++) w_vec[i] = (w >> i) & 0x01;
-
-    // y_vec = A*w_vec + b_vec = b_vec + A*w_vec
-    for (int i = 0; i < 8; i++) {
-        y_vec[i] = b_vec[i];
-        for (int j = 0; j < 8; j++) {
-            // y_i = A[i][0]*w[0] ^ A[i][1]*w[1] ^ ... ^ A[i][7]*w[7]
-            // GF(2)에서 덧셈은 XOR(^)
-            y_vec[i] ^= A[i][j] * w_vec[j];
-        }
-    }
-    // y_vec --> y (바이트)
-    byte y;
-    y = 0;
-    //y_vec = { y0,y1,y2, ... ,y7 } --> y = [y7y6y5y4 y3y2y1y0]
-    for (int i = 0; i < 8; i++) {  // 수정된 부분!!!!! (7-->8)
-        y ^= y_vec[i] << i;
-        // y0<<0 --> 0000 000y0
-        // y1<<1 --> 0000 00y10
-        //...
-        // y7<<7 --> y7000 0000
-    }
-    return y;
-}
-
-// Sbox를 테이블로 받아오기
-// x --> w=x^(-1) --> y = A*x+b
-// 함수의 파라미터로 배열을 전달하면 변경된 결과가 함수 밖에서도 반영된다.
-void Get_AES_Sbox_HW(byte S[256]) {
-    byte w; // 중간값 w 저장
-    for (int i = 0; i < 256; i++) {
-        w = GF256_inv(i);
-        S[i] = AES_Affine_HW(w);
-    }
-}
-
-//Sbox 출력하기(소스코드에 붙이는 용도)
-void print_sbox(byte S[256]) {
-
-    printf("Sbox[256] = {\n");
-    for (int i = 0; i < 256; i++) {
-        if (i < 255) {
-            printf("0x%02x, ", S[i]);
-        }
-        else {
-            printf("0x%02x };\n", S[i]);
-        }
-        if ((i % 16) == 15) printf("\n");
-    }
-}
-
-void Sbox_HW() {
-    byte S[256];
-    Get_AES_Sbox_HW(S);
-	print_sbox(S);
-
-    //고정점 확인
-	int fixed_points_count = 0;
-	printf("Fixed points of Sbox:\n");
-    for(int i = 0; i < 256; i++) {
-        if (S[i] == i) {
-            printf("0x%02x ", i);
-			fixed_points_count++;
-        }
-    }
-    printf("\n");
-    if (fixed_points_count == 0) {
-        printf("No fixed points found.\n");
-    } else {
-        printf("\nTotal fixed points: %d\n", fixed_points_count);
-	}
-    printf("\n");
-
-    //반고정점 확인
-	int antipodal_points_count = 0;
-    printf("Antipodal points of Sbox:\n");
-    for (int i = 0; i < 256; i++) {
-        if ((S[i]^i)==0xff) {
-            printf("0x%02x ", i);
-            antipodal_points_count++;
-        }
-    }
-    printf("\n");
-    if (antipodal_points_count == 0) {
-        printf("No antipodal points found.\n");
-    }
-    else {
-        printf("\nTotal antipodal points: %d\n", antipodal_points_count);
-    }
-    printf("\n");
-}
-
-
-
-
+//===============================================================================
 // AES Affine 변환의 행렬 A의 행을 한칸씩 아래로 이동시킨 행렬 A'의 역행렬을 구하고, 
 // A'의 역행렬과 A'를 곱하여 항등행렬이 나오는지 확인한다.    
 // 새로운 Affine 변환 행렬 A'를 이용하여 Sbox를 구하고, 고정점이 있는지 확인한다.
 
-// 행렬에서 행의 rotation
+// 행렬에서 행을 위로 rotation
 void Matrix_Rotate_Row(byte A[8][8]) {
     byte temp_row[8];
-    int row;
-    
+        
     for(int j = 0; j < 8; j++) {
         temp_row[j] = A[0][j]; // 첫 번째 행을 임시로 저장
 	}
@@ -406,35 +254,35 @@ void Matrix_Rotate_Row(byte A[8][8]) {
 	}
 }
 
+//======
+void make_affine_rotated_matrix(byte AR[8][8], int rot) {
+    const byte A[8][8] = {
+        {1, 0, 0, 0, 1, 1, 1, 1},
+        {1, 1, 0, 0, 0, 1, 1, 1},
+        {1, 1, 1, 0, 0, 0, 1, 1},
+        {1, 1, 1, 1, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 0, 0, 0},
+        {0, 1, 1, 1, 1, 1, 0, 0},
+        {0, 0, 1, 1, 1, 1, 1, 0},
+        {0, 0, 0, 1, 1, 1, 1, 1}
+     };
+
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+            AR[i][j] = A[i][j];
+        }
+	}
+
+    for(int i=0; i<rot; i++) {
+        Matrix_Rotate_Row(AR); // 행렬 A를 한 칸 위로 이동        
+    }
+}
+
 //==============================================
-// 여기부터 2026 HW
 //Affine변환: w --> Aw+b
 // w는 GF(2)^8 원소 (8차원 벡터)  w = [w7w6w5w4 w3w2w1w0]
 // rot: 0이면 원래 A, 1이면 A1 (한칸 아래로 이동), 2이면 A2 (두칸 아래로 이동), 3이면 A3 (세칸 아래로 이동)
-byte AES_Affine_rot(byte w, int rot) {
-    const byte A[8][8] = {
-    {1, 0, 0, 0, 1, 1, 1, 1},
-    {1, 1, 0, 0, 0, 1, 1, 1},
-    {1, 1, 1, 0, 0, 0, 1, 1},
-    {1, 1, 1, 1, 0, 0, 0, 1},
-    {1, 1, 1, 1, 1, 0, 0, 0},
-    {0, 1, 1, 1, 1, 1, 0, 0},
-    {0, 0, 1, 1, 1, 1, 1, 0},
-    {0, 0, 0, 1, 1, 1, 1, 1}
-    };
-
-    for(int i=0; i<rot; i++) {
-        Matrix_Rotate_Row((byte(*)[8])A); // 행렬 A를 한 칸 아래로 이동        
-	}
-    
- //   for(int i=0; i<8; i++) {
- //       for(int j=0; j<8; j++) {
- //           printf("%d ", A[i][j]);
- //       }
- //       printf("\n");
-	//}
-
-
+byte AES_Affine_rot(byte w, byte AR[8][8]) {
     const byte b_vec[8] = { 1, 1, 0, 0, 0, 1, 1, 0 };
     byte w_vec[8];  // w_vec = {w0,w1,w2, ... ,w7}
     byte y_vec[8];  // y_vec = {y0,y1,y2, ... ,y7}
@@ -448,7 +296,7 @@ byte AES_Affine_rot(byte w, int rot) {
         for (int j = 0; j < 8; j++) {
             // y_i = A[i][0]*w[0] ^ A[i][1]*w[1] ^ ... ^ A[i][7]*w[7]
             // GF(2)에서 덧셈은 XOR(^)
-            y_vec[i] ^= A[i][j] * w_vec[j];
+            y_vec[i] ^= AR[i][j] * w_vec[j];
         }
     }
     // y_vec --> y (바이트)
@@ -471,88 +319,173 @@ byte AES_Affine_rot(byte w, int rot) {
 // 함수의 파라미터로 배열을 전달하면 변경된 결과가 함수 밖에서도 반영된다.
 void Get_AES_Sbox_rot(byte S[256], int rot) {
     byte w; // 중간값 w 저장
+	byte AR[8][8];
+	make_affine_rotated_matrix(AR, rot); 
+	printf("A_%1d =\n", rot);
+    for (int i = 0; i < 8; i++) {  
+        printf("[");
+        for (int j = 0; j < 8; j++) {
+            printf(" %1d", AR[i][j]); // 0 또는 1만 출력
+        }
+        printf("]\n");
+    }
+    printf("\n");
+
     for (int i = 0; i < 256; i++) {
         w = GF256_inv(i);
-        S[i] = AES_Affine_rot(w, rot);
+        S[i] = AES_Affine_rot(w, AR);
     }
 }
 
 
-void Sbox_HW_rot(int rot) {
-    byte S[256];
-    Get_AES_Sbox_rot(S, rot);
-    //print_sbox(S);
+////===========================
+//// 2026 HW - order
+//void GF256_order_HW() {
+//    int order;
+//    printf("Order of elements in GF(2^8):\n");
+//    for (int i = 1; i < 256; i++) {
+//        order = GF256_ord(i); 
+//        if (order < 10) {
+//            printf("Element: %02x, Order: %d\n", i, order);
+//        }
+//    }
+//}
 
-    //고정점 확인
+//============================
+// HW1-Problem 3
+void Prob3_GF256() {
+    byte a, b, aa, bb, inv_a, inv_b;
+	int order_a, order_b;
+
+    a = 0xbc;
+    b = 0xbd;
+    printf("a = %02x\n", a);
+    GF256_print_bin(a);
+    GF256_print_poly(a);
+
+    printf("\nb = %02x\n", b);
+    GF256_print_bin(b);
+    GF256_print_poly(b);
+
+	order_a = GF256_ord(a);
+	order_b = GF256_ord(b);
+
+    printf("\nOrder of a = %02x is %d\n", a, order_a);
+	printf("Order of b = %02x is %d\n", b, order_b);    
+
+	aa = GF256_mul(a, a);
+	bb = GF256_mul(b, b);
+	inv_a = GF256_inv(a);
+	inv_b = GF256_inv(b);
+
+	printf("\na^2 = %02x\n", aa);
+	printf("a^(-1) = %02x\n", inv_a);
+    printf("\nb^2 = %02x\n", bb);
+	printf("b^(-1) = %02x\n", inv_b);
+
+	printf("\n%02x*%02x = %02x\n", a, b, GF256_mul(a, b));
+}
+
+//고정점 확인
+int num_fixed_points(byte S[256]) {
     int fixed_points_count = 0;
-    printf("Fixed points of Sbox:\n");
+        
+    printf("Fixed points:");
     for (int i = 0; i < 256; i++) {
         if (S[i] == i) {
-            printf("0x%02x ", i);
+            printf(" %02x", i);
             fixed_points_count++;
         }
     }
-    printf("\n");
     if (fixed_points_count == 0) {
-        printf("No fixed points found.\n");
+        printf(" No fixed points found.\n");
     }
     else {
-        printf("\nTotal fixed points: %d\n", fixed_points_count);
+        printf("\n");
     }
-    printf("\n");
+    return fixed_points_count;
+}
 
-    //반고정점 확인
-    int antipodal_points_count = 0;
-    printf("Antipodal points of Sbox:\n");
+//반고정점 확인
+int num_antifixed_points(byte S[256]) {
+    int anitfixed_points_count = 0;
+
+    printf("Anti-fixed points:");
     for (int i = 0; i < 256; i++) {
         if ((S[i] ^ i) == 0xff) {
-            printf("0x%02x ", i);
-            antipodal_points_count++;
+            printf(" %02x", i);
+            anitfixed_points_count++;
         }
     }
-    printf("\n");
-    if (antipodal_points_count == 0) {
-        printf("No antipodal points found.\n");
+    if (anitfixed_points_count == 0) {
+        printf(" No anti-fixed points found.\n");
     }
     else {
-        printf("\nTotal antipodal points: %d\n", antipodal_points_count);
+        printf("\n");
     }
-    printf("\n");
+    return anitfixed_points_count;
+}
+
+//============================
+// HW1-Problem 5(a)
+void Sbox_fixed_point() {
+    byte S[256];
+    Get_AES_Sbox(S);
+    
+    printf("==[HW1 Problem 5(a)]==\n");
+	printf("Check fixed points and anti-fixed points of AES Sbox\n");
+    num_fixed_points(S);
+	num_antifixed_points(S);
+}
+
+//============================
+// HW1-Problem 5(b)
+void Sbox_wo_affine_fixed_point() {
+    byte S[256];
+    for(int i=0; i<256; i++) {
+        S[i] = GF256_inv(i);
+	}
+
+    printf("==[HW1 Problem 5(b)]==\n");
+    printf("Check fixed points and anti-fixed points of AES Sbox without Affine transform\n");
+    num_fixed_points(S);
+    num_antifixed_points(S);
+}
+
+//============================
+// HW1-Problem 5(c)
+void Sbox_rot_fixed_point() {
+    byte S[256];
+
+    printf("==[HW1 Problem 5(c)]==\n");
+    for (int rot = 1; rot <= 7; rot++) {
+        Get_AES_Sbox_rot(S, rot);
+        //print_sbox(S);    
+        printf("Check fixed points and anti-fixed points of Sbox_%1d\n", rot);
+        num_fixed_points(S);
+        num_antifixed_points(S);
+		printf("\n");
+    }
 }
 
 
-void AES_Affine_rot_HW() {
-    for (int rot = 0; rot < 8; rot++) {
-        printf("Sbox with rotation %d:\n", rot);
-        Sbox_HW_rot(rot);
-    }
-}
+int main(){
 
+    //Prob 3
+    Prob3_GF256();
 
+    //Prob 4
+    GF2_inverse_matrix();
 
-//===========================
-// 2026 HW - order
-void GF256_order_HW() {
-    int order;
-    printf("Order of elements in GF(2^8):\n");
-    for (int i = 1; i < 256; i++) {
-        order = GF256_ord(i); 
-        if (order < 10) {
-            printf("Element: %02x, Order: %d\n", i, order);
-        }
-    }
-}
+    //Prob 5(a)
+	Sbox_fixed_point();
+    
+    //Prob 5(b)
+    Sbox_wo_affine_fixed_point();
 
-int main()
-{
-    test_GF2_matrix();
-    //test_GF2_matrix_HW();
-	//Sbox_HW();
+    //Prob 5(c)
+    Sbox_rot_fixed_point();
 
-    //GF256_order_HW();
-	
-
-    AES_Affine_rot_HW();
 }
 
 
