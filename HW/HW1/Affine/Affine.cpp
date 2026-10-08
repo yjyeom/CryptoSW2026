@@ -121,7 +121,7 @@ GF2_Matrix GF2_Matrix_Inverse(GF2_Matrix A) {
         }
     }
 
-    //GF2_Matrix_print(AA);
+    GF2_Matrix_print(AA);
 
     // R-REF(Reduced Row Echelon Form) [A|I] ==> [I|A^(-1)]
     int pivot_row; // 각 열을 계산하는 단계에서 '1'이 있는 위치의 행
@@ -138,7 +138,7 @@ GF2_Matrix GF2_Matrix_Inverse(GF2_Matrix A) {
             printf("(GF2_Matrix_Inverse) Not Invertible\n");
             return InvA;
         }
-        if (pivot_row != j) {
+        if (pivot_row != j) { // AA[j][j]=1 로 만들기
             GF2_Mat_Exchange_Row(AA, j, pivot_row);
         }
         //GF2에서는 필요하지 않음: Mat_Scalar_Mul_Row(AA, 1. / AA.M[j][j], j);
@@ -274,7 +274,7 @@ void make_affine_rotated_matrix(byte AR[8][8], int rot) {
 	}
 
     for(int i=0; i<rot; i++) {
-        Matrix_Rotate_Row(AR); // 행렬 A를 한 칸 위로 이동        
+        Matrix_Rotate_Row(AR); // 행렬 AR를 한 칸 위로 이동        
     }
 }
 
@@ -472,10 +472,10 @@ void Sbox_rot_fixed_point() {
 int main(){
 
     //Prob 3
-    Prob3_GF256();
+    //Prob3_GF256();
 
     //Prob 4
-    GF2_inverse_matrix();
+    //GF2_inverse_matrix();
 
     //Prob 5(a)
 	Sbox_fixed_point();
