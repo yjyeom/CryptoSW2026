@@ -1,248 +1,400 @@
 ﻿#include <stdio.h>
 
-//데이터 형: 바이트
-//예: 0x0a = 0000 1010 = x^3 + x
-typedef unsigned char byte; //0~255
+typedef unsigned char byte;
 
-//유한체 GF(2^8)의 덧셈
+// for problem6_d
+byte ExpTable[256];
+int LogTable[256];
+
 byte GF256_add(byte a, byte b)
 {
-    return a ^ b; // ^ : xor 연산자
+	return a ^ b;
 }
 
-//다항식 꼴에 x 곱하기
+void GF256_print_bin(byte b)
+{
+	byte b_coeff[8]; //계수저장배열
+
+	for (int i = 0; i < 8; i++)
+	{
+		b_coeff[i] = (b >> (7 - i)) & 0x01;
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		printf("%d", b_coeff[i]);
+	}
+	printf("\n");
+}
+
+// 다항식으로 출력
+void GF256_print_poly(byte b)
+{
+	byte b_coeff[8];
+
+	for (int i = 0; i < 8; i++)
+	{
+		b_coeff[i] = (b >> (7 - i)) & 0x01;
+	}
+
+	int coef, expo;
+	for (int i = 0; i < 8; i++)
+	{
+		coef = b_coeff[i];
+		expo = 7 - i;
+		if (coef == 1)
+		{
+			printf("+ x^%ld", expo);
+		}
+	}
+	printf("\n");
+}
+
 byte GF256_xtime(byte a)
 {
-    int msb; //최고차항 계수
-    byte result; //결과값 저장
-
-    msb = (a >> 7) & 0x01;
-    if (msb == 0) {
-        result = a << 1;
-    }
-    else {
-        result = (a << 1) ^ 0x1b;//덧셈은 xor
-    }
-    return result;
+	int msb; // 최고차항의 계수
+	byte result;
+	msb = (a >> 7) & 0x01;
+	if (msb == 0)
+	{
+		result = a << 1;
+	}
+	else
+	{
+		result = (a << 1) ^ 0x1b;
+	}
+	return result;
 }
 
-//GF(2^8)에서의 곱셉
 byte GF256_mul(byte a, byte b)
 {
-    byte h; //결과를 저장할 변수
-    int coef; //계수 저장
+	byte h;
+	int coef;
 
-    h = 0x00;
-    for (int i = 7; i >= 0; i--) {
-        coef = (a >> i) & 0x01;
-        h = GF256_xtime(h);
-        if (coef == 1) {
-            h = GF256_add(h, b);
-        }
-    }
-    return h;
+	h = 0x00;
+	for (int i = 7; i >= 0; i--)
+	{
+		coef = (a >> i) & 0x01;
+		h = GF256_xtime(h);
+		if (coef == 1) // 계수가 1이면
+		{
+			h = GF256_add(h, b); // = h^b
+		}
+	}
+	return h;
 }
 
-//a(0이 아닌 원소)의 위수
+
+void GF256_element()
+{
+	byte a, b, c;
+	a = 0x03;
+	b = 0xa1;
+	printf("a = ");
+	GF256_print_bin(a);
+	GF256_print_poly(a);
+	printf("b = ");
+	GF256_print_bin(b);
+	GF256_print_poly(b);
+	c = GF256_add(a, b);
+	printf("c = ");
+	GF256_print_bin(c);
+	GF256_print_poly(c);
+}
+
+
+void GF256_mul_test()
+{
+	byte a, b, c, d;
+	a = 0x03;
+	b = 0xa1;
+	printf("a = ");
+	GF256_print_bin(a);
+	GF256_print_poly(a);
+	printf("b = ");
+	GF256_print_bin(b);
+	GF256_print_poly(b);
+
+	c = GF256_xtime(a);
+	d = GF256_xtime(b);
+	printf("c = ");
+	GF256_print_bin(c);
+	GF256_print_poly(c);
+	printf("d = ");
+	GF256_print_bin(d);
+	GF256_print_poly(d);
+}
+
+
 int GF256_ord(byte a)
 {
-    byte temp;
-    int order;
+	byte temp;
+	int order;
 
-    if (a == 0) {
-        return -1;
-    }
-    temp = a;
-    order = 1;
-    while (temp != 1) {
-        temp = GF256_mul(temp, a);
-        order++;
-    }
-    return order;
+	if (a == 0)
+	{
+		return -1; //의미 없는 결과
+	}
+
+	temp = a;
+	order = 1;
+	while (temp != 1)
+	{
+		temp = GF256_mul(temp, a);
+		order++;
+	}
+	return order;
 }
 
-//6(c)의 테이블을 저장하는 자료형.
-typedef struct
-{
-    byte generator;
-    byte ExpTable[256]; // 유효 인덱스: 1~255
-    int LogTable[256];  // 유효 입력: 1~255, 0의 로그는 -1
-} GF256_Tables;
 
-//6(a)의 alpha^0~alpha^254 표 생성
-//GF256_ord로 생성자인지 확인하고 GF256_mul로 거듭제곱을 계산
-static int Build_Power_Table(byte alpha, byte powers[255])
+void order_test()
 {
-    if (GF256_ord(alpha) != 255)
-    {
-        fprintf(stderr, "Build_Power_Table: alpha is not a generator.\n");
-        return 0;
-    }
-    powers[0] = 1;
-    for (int k = 1; k <= 254; k++)
-    {
-        powers[k] = GF256_mul(powers[k - 1], alpha);
-    }
-    return 1;
+	int num_max_order;
+	int order;
+	num_max_order = 0;
+
+	printf("GF(2^8)의 원소들의 위수");
+	for (int i = 0; i < 256; i++)
+	{
+		order = GF256_ord(i);
+		printf("ord(%3d) = %d\n", i, GF256_ord(i));
+		if (order == 255) num_max_order++;
+	}
+	printf("최대 위수를 갖는 원소의 개수 = %d", num_max_order);
 }
 
-//6(a)의 표에서 x = alpha^k를 만족하는 k를 찾기
-static int Find_Power_Index(byte x, const byte powers[255])
+
+// 곱셈의 역원
+byte GF256_inv(byte a)
 {
-    for (int k = 0; k <= 254; k++)
-    {
-        if (powers[k] == x) return k;
-    }
-    return -1;
+	byte inverse;
+	byte temp;
+
+	if (a == 0)
+	{
+		return 0;
+	}
+
+	inverse = 1; //초기값
+	temp = a;    //초기값
+	for (int i = 0; i < 7; i++)
+	{
+		temp = GF256_mul(temp, temp);
+		inverse = GF256_mul(inverse, temp);
+	}
+	return inverse;
 }
 
-//바이트 값의 표를 한 번에 최대 16개 열씩 모두 출력
-static void Print_Byte_Table(const byte values[], int first, int last)
+void order_inverse_test()
 {
-    for (int start = first; start <= last; start += 16)
-    {
-        int end = start + 15;
-        if (end > last) end = last;
-        printf("k   :");
-        for (int k = start; k <= end; k++) printf("%5d", k);
-        printf("\nval :");
-        for (int k = start; k <= end; k++)
-            printf(" 0x%02x", (unsigned)values[k]);
-        printf("\n\n");
-    }
+	int num_max_order;
+	int order;
+	byte inv;
+	num_max_order = 0;
+	printf("GF(2^8)의 원소의 위수");
+	for (int i = 0; i < 256; i++)
+	{
+		order = GF256_ord(i);
+		inv = GF256_inv(i);
+		printf("ord(%3d) = %d, %02x^(-1) = %02x, %02x * %02x = %02x\n", i, order, i, inv, i, inv, GF256_mul(i, inv));
+	}
+	printf("최대 위수를 갖는 원소의 개수 = %d\n", num_max_order);
 }
 
-//6(c)의 ExpTable / LogTable을 생성
-//alpha의 위수가 255인지 검사한 뒤, k=1~255의 값을 계산
-//각 0이 아닌 원소가 정확히 한 번씩 등장하는지 확인
-static int Build_GF256_Tables(byte alpha, GF256_Tables* tables)
+
+byte AES_Affine(byte w)
 {
-    byte value = 1;
-    if (GF256_ord(alpha) != 255)
-    {
-        fprintf(stderr, "Build_GF256_Tables: alpha is not a generator.\n");
-        return 0;
-    }
-    tables->generator = alpha;
-    for (int i = 0; i < 256; i++)
-    {
-        tables->ExpTable[i] = 0;
-        tables->LogTable[i] = -1;
-    }
-    for (int k = 1; k <= 255; k++)
-    {
-        value = GF256_mul(value, alpha);
-        if (value == 0 || tables->LogTable[value] != -1)
-        {
-            fprintf(stderr, "Build_GF256_Tables: repeated or zero element.\n");
-            return 0;
-        }
-        tables->ExpTable[k] = value;
-        tables->LogTable[value] = k;
-    }
-    return value == 1;
+	const byte A[8][8] = {
+		{1,0,0,0,1,1,1,1},
+		{1,1,0,0,0,1,1,1},
+		{1,1,1,0,0,0,1,1},
+		{1,1,1,1,0,0,0,1},
+		{1,1,1,1,1,0,0,0},
+		{0,1,1,1,1,1,0,0},
+		{0,0,1,1,1,1,1,0},
+		{0,0,0,1,1,1,1,1}
+	};
+	const byte b_vec[8] = { 1,1,0,0,0,1,1,0 };
+	byte w_vec[8];
+	byte y_vec[8];
+
+	for (int i = 0; i < 8; i++) w_vec[i] = (w >> i) & 0x01;
+
+	for (int i = 0; i < 8; i++)
+	{
+		y_vec[i] = b_vec[i];
+		for (int j = 0; j < 8; j++)
+		{
+			y_vec[i] += A[i][j] * w_vec[j];
+		}
+	}
+
+	byte y;
+	y = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		y ^= (y_vec[i] << i);
+	}
+	return y;
 }
 
-//6(c)의 LogTable을 출력
-static void Print_Log_Table(const GF256_Tables* tables)
+//SBOX 테이블 만들기
+void Get_AES_Sbox(byte S[256])
 {
-    for (int start = 0; start < 256; start += 16)
-    {
-        printf("x   :");
-        for (int x = start; x < start + 16; x++)
-            printf(" 0x%02x", (unsigned)x);
-        printf("\nlog :");
-        for (int x = start; x < start + 16; x++)
-        {
-            if (tables->LogTable[x] == -1) printf("    -");
-            else printf("%5d", tables->LogTable[x]);
-        }
-        printf("\n\n");
-    }
+	byte w;
+	for (int i = 0; i < 256; i++)
+	{
+		w = GF256_inv(i);
+		S[i] = AES_Affine(w);
+	}
 }
 
-//ExpTable, LogTable 이용한 GF(2^8) 곱셈
-static byte GF256_Mul_Tables(byte x, byte y, const GF256_Tables* tables)
+//SBOX 만들기
+void print_sbox()
 {
-    int exponent;
-    if (x == 0 || y == 0) return 0;
-    exponent = (tables->LogTable[x] + tables->LogTable[y]) % 255;
-    if (exponent == 0) exponent = 255;
-    return tables->ExpTable[exponent];
+	byte S[256];
+
+	Get_AES_Sbox(S);
+
+	printf("Sbox[256] = {\n");
+	for (int i = 0; i < 256; i++)
+	{
+		if (i < 255)
+		{
+			printf("0x%02x, ", S[i]);
+		}
+		else
+		{
+			printf("0x%02x }; \n", S[i]);
+		}
+		if ((i % 16) == 15) printf("\n");
+	}
 }
 
-//GF_mul의 계산 결과와 같은지 체크
-static int Verify_Table_Multiplication(const GF256_Tables* tables)
+
+void problem6_a()
 {
-    for (int x = 0; x < 256; x++)
-    {
-        for (int y = 0; y < 256; y++)
-        {
-            byte actual = GF256_Mul_Tables((byte)x, (byte)y, tables);
-            byte expected = GF256_mul((byte)x, (byte)y);
-            if (actual != expected)
-            {
-                fprintf(stderr, "Mismatch: 0x%02x * 0x%02x\n",
-                    (unsigned)x, (unsigned)y);
-                return 0;
-            }
-        }
-    }
-    return 1;
+	byte a = 0x03;
+	byte value = 0x01;
+
+	printf("===== Problem 6(a) =====\n");
+
+	for (int k = 0; k <= 254; k++)
+	{
+		printf("a^%d = 0x%02x\n", k, value);
+
+		value = GF256_mul(value, a);
+	}
 }
 
-//결과 출력
-int main(void)
+
+void problem6_c()
 {
-    const byte alpha = 0x03;
-    const byte x = 0xa1;
-    const byte y = 0x63;
-    // (c)의 생성자 선택: 0x03을 사용하며 다른 생성자로 바꿀 수 있다.
-    const byte chosen_generator = 0x03;
-    byte powers[255];
-    GF256_Tables tables;
-    int kx, ky, exponent;
-    byte product;
+	byte ExpTable[256];
+	int LogTable[256];
 
-    printf("6(a) alpha = 0x%02x, order = %d\n",
-        (unsigned)alpha, GF256_ord(alpha));
-    if (!Build_Power_Table(alpha, powers)) return 1;
-    printf("All powers alpha^0 through alpha^254:\n\n");
-    Print_Byte_Table(powers, 0, 254);
+	byte a = 0x03;
+	byte value = 0x01;
 
-    printf("6(b) Multiply using the table in 6(a):\n");
-    kx = Find_Power_Index(x, powers);
-    ky = Find_Power_Index(y, powers);
-    if (kx == -1 || ky == -1)
-    {
-        fprintf(stderr, "6(b): could not find an exponent.\n");
-        return 1;
-    }
-    exponent = (kx + ky) % 255;
-    product = powers[exponent];
-    printf("0x%02x = alpha^%d, 0x%02x = alpha^%d\n",
-        (unsigned)x, kx, (unsigned)y, ky);
-    printf("(%d + %d) mod 255 = %d\n", kx, ky, exponent);
-    printf("0x%02x * 0x%02x = alpha^%d = 0x%02x\n\n",
-        (unsigned)x, (unsigned)y, exponent, (unsigned)product);
+	// 초기화
+	for (int i = 0; i < 256; i++)
+	{
+		ExpTable[i] = 0;
+		LogTable[i] = -1;
+	}
 
-    printf("6(c) Chosen generator = 0x%02x\n", (unsigned)chosen_generator);
-    if (!Build_GF256_Tables(chosen_generator, &tables)) return 1;
-    printf("ExpTable(k), k = 1..255 (index 0 is unused):\n\n");
-    Print_Byte_Table(tables.ExpTable, 1, 255);
-    printf("LogTable(x): '-' means that log(0) is undefined.\n\n");
-    Print_Log_Table(&tables);
-    printf("ExpTable(255) = 0x%02x; LogTable(0x01) = %d\n\n",
-        (unsigned)tables.ExpTable[255], tables.LogTable[1]);
+	// a^1부터 시작
+	value = a;
 
-    printf("6(d) GF256_Mul_Tables:\n");
-    printf("0x%02x * 0x%02x = 0x%02x\n", (unsigned)x, (unsigned)y,
-        (unsigned)GF256_Mul_Tables(x, y, &tables));
-    printf("0x01 * 0x01 = 0x%02x\n",
-        (unsigned)GF256_Mul_Tables(1, 1, &tables));
-    printf("0x00 * 0x%02x = 0x%02x\n", (unsigned)x,
-        (unsigned)GF256_Mul_Tables(0, x, &tables));
-    if (!Verify_Table_Multiplication(&tables)) return 1;
-    printf("PASS: all 65536 products match the original GF256_mul.\n");
-    return 0;
+	for (int k = 1; k <= 255; k++)
+	{
+		ExpTable[k] = value;
+		LogTable[value] = k;
+
+		value = GF256_mul(value, a);
+	}
+
+
+	printf("===== ExpTable =====\n");
+
+	for (int k = 1; k <= 255; k++)
+	{
+		printf("ExpTable[%3d] = 0x%02x\n",
+			k, ExpTable[k]);
+	}
+
+
+	printf("\n===== LogTable =====\n");
+
+	for (int x = 1; x <= 255; x++)
+	{
+		printf("LogTable[0x%02x] = %d\n",
+			x, LogTable[x]);
+	}
+}
+
+
+void make_table()
+{
+	byte alpha = 0x03;
+	byte value = alpha;
+
+	for (int i = 0; i < 256; i++)
+	{
+		ExpTable[i] = 0;
+		LogTable[i] = -1;
+	}
+
+	for (int k = 1; k <= 255; k++)
+	{
+		ExpTable[k] = value;
+		LogTable[value] = k;
+
+		value = GF256_mul(value, alpha);
+	}
+}
+
+byte GF256_mul_table(byte a, byte b)
+{
+	// 둘 중 하나가 0이면 결과도 0
+	if (a == 0 || b == 0)
+	{
+		return 0;
+	}
+
+	int exponent;
+
+	exponent = (LogTable[a] + LogTable[b]) % 255;
+
+	// ExpTable은 1~255를 사용 >> 0은 255로 바꾸기
+	if (exponent == 0)
+	{
+		exponent = 255;
+	}
+
+	return ExpTable[exponent];
+}
+
+
+void problem6_d()
+{
+	make_table();
+
+	// 테스트용
+	byte a = 0xa1;
+	byte b = 0x63;
+
+	byte result = GF256_mul_table(a, b);
+
+	printf("0x%02x * 0x%02x = 0x%02x\n",
+		a, b, result);
+}
+
+int main()
+{
+	problem6_a();
+	problem6_c();
+	problem6_d();
+
+	return 0;
 }
