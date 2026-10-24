@@ -261,7 +261,7 @@ int main() {
     //my_gcd_test();
     //my_exgcd_test();
     
-    //my_macro_bad_test();
+    my_macro_bad_test();
 	my_macro_test();
 
     return 0;

@@ -269,7 +269,7 @@ void GF16_check_order() {
 
 int main()
 {
-    //GF16_check_order();
+    GF16_check_order();
     GF16_gen_log_table(0x03);
     GF16_gen_log_table(0x0b);
 
