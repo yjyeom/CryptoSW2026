@@ -403,9 +403,9 @@ void file_handling_example() {
 
 int main() {
     //file_handling_example();
-    //my_padding_example();
-    //my_padding_example2();
+    my_padding_example();
+    my_padding_example2();
 
-    file_padding_example();
+    //file_padding_example();
     return 0;
 }
