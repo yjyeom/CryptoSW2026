@@ -2,6 +2,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h> // 이 헤더파일이 있어야 malloc()이 정상적으로 작동함
 #include <errno.h>
 
 typedef unsigned char byte;
@@ -86,7 +87,7 @@ void padding_example() {
     }
     byte* padded1 = NULL;
     byte* padded2 = NULL;
-    int out_bytes1, out_bytes2;
+    size_t out_bytes1, out_bytes2;
     gen_data_padding(input1, 16, &padded1, &out_bytes1);
     gen_data_padding(input2, 20, &padded2, &out_bytes2);
 
