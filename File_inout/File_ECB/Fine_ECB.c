@@ -67,6 +67,8 @@ void print_file_contents(const char* path)
 
         // 오프셋 출력
         printf("%08zx  ", offset);
+        //같은결과 
+        //printf("%08x  ", offset);
 
         // 헥사 출력 (16바이트 칸 유지)
         for (size_t i = 0; i < 16; ++i) {
