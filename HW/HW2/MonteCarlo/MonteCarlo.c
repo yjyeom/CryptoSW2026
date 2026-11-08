@@ -1,4 +1,5 @@
 ﻿#include <stdio.h>
+#include <math.h>
 #include "AES32.h"
 
 #define UINT32_MAX 0xFFFFFFFF
@@ -20,10 +21,14 @@ u32 RBG_Getrand32() {
         pt[i] = SEED[i];
     }    
     AES32_Encrypt(pt, rk, ct);
+    u32 rand32 = GETU32(ct);
+    for (int i = 0; i < 16; i++) {
+        pt[i] = ct[i];
+    }
+    AES32_Encrypt(pt, rk, ct);
     for (int i = 0; i < 16; i++) {
         SEED[i] = ct[i];
-    }
-    u32 rand32 = GETU32(ct);
+    }    
 	return rand32;
 }
 
@@ -61,7 +66,8 @@ void MonteCarlo_pi_test() {
 // Monte Carlo integral
 
 double f(double x) {
-    return x * x; // Example function: f(x) = x^2
+    //return x * x; // Example function: f(x) = x^2
+    return exp(-x * x);
 }
 
 // Int_a^b f(x) dx 
