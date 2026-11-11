@@ -77,7 +77,7 @@ void print_b_array(byte b_arr[], int len, const char* pStr) {
 	printf("\n");
 }
 
-// 바이트 배열 복사하기
+// 바이트 배열 복사하기 ((memcpy)
 void copy_b_array(byte src[], int len, byte dest[]) {
 	for (int i = 0; i < len; i++) {
 		dest[i] = src[i];

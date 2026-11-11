@@ -21,6 +21,7 @@ typedef struct {
 	int plaintext_len;
 } TestVector;
 
+//사용법: read_test_vector("test-file.txt", &test_vec);
 void read_test_vector(char *file, TestVector *tv) {
     FILE* fp = fopen(file, "r");
     if (fp == NULL) {
@@ -38,10 +39,12 @@ void read_test_vector(char *file, TestVector *tv) {
         if (sscanf(line, "%63[^=] = %2047s", name, value) == 2) {
             //printf("%s, %s, len = %d\n", name, value, strlen(value));
             if (strcmp(name, "COUNT ") == 0) {
-                tv->count = atoi(value);
+                tv->count = atoi(value);  // atoi (ascii to integer)
+                // 구조체 변수 tv_struct.count 
+                // 구조체 포인터 tv_pointer->count
             }
             else if (strcmp(name, "KEY ") == 0) {
-                strcpy(tv->key, value);
+                strcpy(tv->key, value); // key[] 배열이름 key: key[0]의 주소를 가리키는 포인터
 				tv->key_len = strlen(value) / 2; 
             }
             else if (strcmp(name, "IV ") == 0) {
@@ -173,14 +176,14 @@ int main()
 {
     //hex_test();
 
-    //read_test_vector_test();
+    read_test_vector_test();
 
-    CBC_TV_test();
+    //CBC_TV_test();
 
 
-    //read_test_vector_ctr_test();
+    read_test_vector_ctr_test();
 
-    CTR_TV_test();
+    //CTR_TV_test();
 
 	return 0;
 }
