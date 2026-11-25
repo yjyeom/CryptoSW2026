@@ -619,7 +619,7 @@ int main()
 
 	//print_rotation_by_stallings();
 
-	//kisa_main();
+	kisa_main();
 
 	//test_state_conversion();
 
