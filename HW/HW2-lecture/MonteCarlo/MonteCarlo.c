@@ -5,10 +5,14 @@
 #define UINT32_MAX 0xFFFFFFFF
 
 // SEED
+//static : (전역) 변수는 파일 안에서만 보이도록 함. 
+// 키워드 static 공부 (다른 용도)
 static byte SEED[16];
 
 //---------------------------------------
 // AES_OFB 방식의 난수생성 
+// seed (평문) ---> AES(seed) ---> (출력, seed 업데이트)
+// 의사난수생성방법: 표준방식 (SP 800-90A, ISO/IEC 18031)
 
 // 초깃값(seed, iv) 설정
 void RBG_SetSeed(byte iv[16]) {
@@ -25,14 +29,16 @@ u32 RBG_Getrand32() {
         pt[i] = SEED[i];
     }    
     AES32_Encrypt(pt, rk, ct);
-    u32 rand32 = GETU32(ct);
+    u32 rand32 = GETU32(ct); // ct[0] ct[1] ct[2] ct[3] --> 32비트
     for (int i = 0; i < 16; i++) {
         pt[i] = ct[i];
     }
     AES32_Encrypt(pt, rk, ct);
     for (int i = 0; i < 16; i++) {
         SEED[i] = ct[i];
-    }    
+    }  
+    // seed -- ct = AES(seed) (32bit 난수 추출) 
+    // next_seed = AES(ct) -> 다음 seed로 사용
 	return rand32;
 }
 //---------------------------------------
@@ -52,9 +58,10 @@ double MonteCarlo_pi(int N) {
         double y = (double)rand_y / (double)UINT32_MAX;
 		// 원 안에 점이면 카운터 증가
         if (x * x + y * y <= 1.0) {
-            count++;
+            count++;  
         }
     }
+    // count/N = pi/4 ==> pi = 4*count/N
 
 	// 원에 들어갈 확률 = pi/4 이므로 pi = 4 * (count / N)
     pi = 4.0 * (double)count / (double)N;
@@ -95,6 +102,9 @@ double MonteCarlo_integral(double a, double b, int N) {
             count++;
 		}
     }
+
+    // 직사각형의 넓이: (b-a)
+    // 적분 = 넓이*(유효한 점의 비율) = (b-a)* count/N
     return (b - a) * (double)count / (double)N;
 }
 
@@ -118,7 +128,7 @@ void MonteCarlo_integral_test() {
 
 int main()
 {
-    MonteCarlo_pi_test();
+    //MonteCarlo_pi_test();
 
     MonteCarlo_integral_test();
 }

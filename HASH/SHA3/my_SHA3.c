@@ -40,18 +40,22 @@ static const uint32_t keccakf_rndc[KECCAK_ROUND][2] =
 };
 
 
+// 24개 레인별 상수 (0~24 lane)
 static const unsigned keccakf_rotc[KECCAK_ROUND] =
 {
 	 1,  3,  6, 10, 15, 21, 28, 36, 45, 55,  2, 14,
 	27, 41, 56,  8, 25, 43, 62, 18, 39, 61, 20, 44
 };
 
+// 24개 pi 함수용 상수 
 static const unsigned keccakf_piln[KECCAK_ROUND] =
 {
 	10,  7, 11, 17, 18,  3,  5, 16,  8, 21, 24,  4,
 	15, 23, 19, 13, 12,  2, 20, 14, 22,  9,  6,  1
 };
 
+//KISA 소스코드의 ROL64의 오류 수정
+// 64비트 데이터 [msb (in[1], in[0]) lsb]를  offset만큼 왼쪽으로 회전
 void ROL64_new(uint32_t* in, uint32_t* out, int offset)
 {
 	int shift = 0;
@@ -70,7 +74,7 @@ void ROL64_new(uint32_t* in, uint32_t* out, int offset)
 	}
 	else if (offset == 32) // 32비트는 별도로 처리해야 함 <<n (n은 0-31)만 정의됨.
 	{
-		out[1] = in[0];
+		out[1] = in[0];  // in[1] in[0] ==> in[0] in[1]
 		out[0] = in[1];
 	}
 	else if (offset < 64)
@@ -87,6 +91,10 @@ void ROL64_new(uint32_t* in, uint32_t* out, int offset)
 	}
 }
 
+// rho 함수에서 사용할 offset의 계산
+// 슬라이스 xy[0-24]에서 각 레인의 회전량을 저장함
+// offset: g(t) = (t+1)(t+2)/2
+// 선형변환: x' = y, y' = 2x+3y
 void rho_offset(int offset[25])
 {
 	int x, y, t;
@@ -100,7 +108,7 @@ void rho_offset(int offset[25])
 		x = y;
 		y = (2 * tmp + 3 * y) % 5;
 	}
-	offset[0] = 0;
+	offset[0] = 0; // 가운데는 회전하지 않음
 }
 
 // KISA SHA3 내부 상수 만드는 함수
@@ -205,6 +213,7 @@ int ROL64_test()
 
 }
 
+
 void Rho_offset_test()
 {
 	int offset[25];
@@ -226,6 +235,8 @@ void Rho_offset_test()
 		printf("\n");
 	}
 
+	printf("\n");
+
 	int fips_table2[25] = { 153, 231, 3, 10, 171,
 								55, 276, 36, 300, 6,
 								28, 91, 0, 1, 190,
@@ -243,7 +254,7 @@ void Rho_offset_test()
 
 }
 
-
+// 바이트배열 state[200] ==> 워드배열 s32[25][2]
 void state_to32(uint8_t state[200], uint32_t s32[25][2]) {
 
 	int i;
@@ -261,6 +272,7 @@ void state_to32(uint8_t state[200], uint32_t s32[25][2]) {
 	}
 }
 
+// 워드배열 s32[25][2]  ==> 바이트배열 state[200]
 void state_to8(uint8_t state[200], uint32_t s32[25][2]) {
 	for (int i = 0; i < 25; i++)
 	{
@@ -273,7 +285,6 @@ void state_to8(uint8_t state[200], uint32_t s32[25][2]) {
 		state[i * 8 + 6] = (uint8_t)(s32[i][1] >> 16);
 		state[i * 8 + 7] = (uint8_t)(s32[i][1] >> 24);
 	}
-
 }
 
 /* Theta */
@@ -282,8 +293,8 @@ void theta(uint32_t s[25][2]) {
 	int i, j;
 
 	for (i = 0; i < 5; i++) { // i는 x축 인덱스
-		bc[i][0] = s[i][0] ^ s[i + 5][0] ^ s[i + 10][0] ^ s[i + 15][0] ^ s[i + 20][0];  // y축 column
-		bc[i][1] = s[i][1] ^ s[i + 5][1] ^ s[i + 10][1] ^ s[i + 15][1] ^ s[i + 20][1];	// y축 column
+		bc[i][0] = s[i][0] ^ s[i + 5][0] ^ s[i + 10][0] ^ s[i + 15][0] ^ s[i + 20][0];  // y축 column의 합
+		bc[i][1] = s[i][1] ^ s[i + 5][1] ^ s[i + 10][1] ^ s[i + 15][1] ^ s[i + 20][1];	// y축 column의 합
 	}
 
 	for (i = 0; i < 5; i++) {
@@ -602,11 +613,11 @@ int main()
 {
 	//ROL64_test();
 	
-	Rho_offset_test();
+	//Rho_offset_test();
 
-	//print_rho_constants();
+	print_rho_constants();
 
-	print_rotation_by_stallings();
+	//print_rotation_by_stallings();
 
 	//kisa_main();
 

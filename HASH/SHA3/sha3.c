@@ -1,3 +1,5 @@
+// 출처: KISA 암호이용활성화 페이지
+
 #include "sha3.h"
 
 #define KECCAK_SPONGE_BIT		1600

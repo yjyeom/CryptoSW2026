@@ -13,7 +13,7 @@
 // Test vector 구조체 정의
 typedef struct {
     int count;
-    char key[MAX_DATA_LENGTH];
+    char key[MAX_DATA_LENGTH]; // 문자열 "b7f3c9576e12dd0db63e8f8fac2b9a39"
     char iv[MAX_DATA_LENGTH];
     char plaintext[MAX_DATA_LENGTH];
     char ciphertext[MAX_DATA_LENGTH];
@@ -29,7 +29,7 @@ void read_test_vector(char *file, TestVector *tv) {
     FILE* fp = fopen(file, "r");
     if (fp == NULL) {
         perror("fopen");
-        //return 1;
+        return;
     }
         
     char line[MAX_LINE_LENGTH];
@@ -70,7 +70,7 @@ void read_test_vector(char *file, TestVector *tv) {
 // CBC 모드 테스트 벡터 읽기 테스트
 void read_test_vector_test() {
 	TestVector tv;
-    read_test_vector("test-vector-CBC.txt", & tv);
+    read_test_vector("test-vector-CBC.txt", &tv);
 
     printf("COUNT      = %d\n", tv.count);
     printf("KEY        = %s, (%d bytes)\n", tv.key, tv.key_len);
@@ -189,7 +189,7 @@ int main()
     //read_test_vector_test();
 
 	// 3(b) CBC 모드 Test vector 검증
-    CBC_TV_test();
+    //CBC_TV_test();
 
 
     //read_test_vector_ctr_test();

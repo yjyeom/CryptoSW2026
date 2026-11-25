@@ -142,7 +142,7 @@ void AES_CBC_Dec_File(const char* fileCT, byte key[16], byte IV[16], const char*
     int last_pt_len;
     last_pt_len = pt_length(pt); //패딩을 제외한 평문의 길이(0~15)를 계산
     // 암호문의 마지막 블록에 오류를 넣으면, 높은 확률로 복호화할 때 패딩 오류가 발생함
-    if (last_pt_len >= 0) {
+    if (last_pt_len >= 0) { // 패딩오류이면  -1
         fwrite(pt, 1, last_pt_len, fdst);
     }
     else {
